@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  verifying-paymaster:
+    container_name: verifying-paymaster-scroll-sepolia
+    build: .
+    restart: unless-stopped
+    ports:
+      - 40003:8080
+    volumes:
+      - ./paymaster/configs/.env-scroll-sepolia:/app/paymaster/.env
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Shanghai

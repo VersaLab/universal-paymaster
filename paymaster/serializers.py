@@ -1,10 +1,8 @@
-from .models import Operation
 from django.utils.translation import gettext_lazy as _
-
-from hexbytes import HexBytes
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
+from hexbytes import HexBytes
+from .models import Operation
 from .utils import fast_is_checksum_address
 
 
@@ -40,6 +38,54 @@ class EthereumAddressField(serializers.Field):
             raise ValidationError("Address %s is not checksumed" % data)
 
         return data
+
+
+class DecimalField(serializers.Field):
+    """
+    Serializes decimal values. Empty values should be None.
+    """
+
+    default_error_messages = {
+        "invalid": _("{value} is not a decimal value."),
+        "blank": _("This field may not be blank."),
+        "max_value": _("Ensure this field is less than or equal to {max_value}."),
+        "min_value": _("Ensure this field is greater than or equal to {min_value}."),
+    }
+
+    def __init__(self, **kwargs):
+        self.allow_blank = kwargs.pop("allow_blank", False)
+        self.max_value = kwargs.pop("max_value", None)
+        self.min_value = kwargs.pop("min_value", None)
+        super().__init__(**kwargs)
+
+    def to_representation(self, obj):
+        if obj is None:
+            return None
+        return str(obj)
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            data = data.strip()
+        elif data is None:
+            pass
+        else:
+            self.fail("invalid", value=data)
+
+        if not data:
+            if self.allow_blank:
+                return None
+            else:
+                self.fail("blank")
+
+        try:
+            decimal_value = int(data)
+            if self.min_value is not None and decimal_value < self.min_value:
+                self.fail("min_value", min_value=self.min_value)
+            elif self.max_value is not None and decimal_value > self.max_value:
+                self.fail("max_value", max_value=self.max_value)
+            return decimal_value
+        except ValueError:
+            self.fail("invalid", value=data)
 
 
 class HexadecimalField(serializers.Field):
@@ -125,7 +171,6 @@ class HexadecimalField2(HexadecimalField):
 
         if not data:
             if self.allow_blank:
-                # return None
                 return bytes(0)
             else:
                 self.fail("blank")
@@ -143,8 +188,6 @@ class HexadecimalField2(HexadecimalField):
 
 
 class OperationSerialzer(serializers.Serializer):
-    # class Meta:
-    #     list_serializer_class = BundleSerialzer
     sender = EthereumAddressField()
     nonce = HexadecimalField()
     initCode = HexadecimalField2(allow_blank=True)
@@ -155,7 +198,7 @@ class OperationSerialzer(serializers.Serializer):
     maxFeePerGas = HexadecimalField()
     maxPriorityFeePerGas = HexadecimalField()
     paymasterAndData = HexadecimalField2(allow_blank=True)
-    signature = HexadecimalField2(max_length=65, min_length=65, allow_blank=True)
+    signature = HexadecimalField2(allow_blank=True)
 
     def create(self, validated_data):
         return Operation.objects.create(**validated_data)

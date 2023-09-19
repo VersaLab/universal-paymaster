@@ -1,8 +1,7 @@
-from typing import Union
-from eth_typing import AnyAddress, ChecksumAddress, HexStr
-from eth_utils import to_normalized_address
-from sha3 import keccak_256
 from django.core.exceptions import ValidationError
+from eth_typing import AnyAddress, ChecksumAddress, HexStr
+from eth_utils import to_normalized_address, keccak
+from typing import Union
 
 
 def validate_checksumed_address(address):
@@ -20,7 +19,7 @@ def fast_keccak_hex(value: bytes) -> HexStr:
     :param value:
     :return: Keccak256 used by ethereum as an hex string (not 0x prefixed)
     """
-    return HexStr(keccak_256(value).hexdigest())
+    return HexStr(keccak(value).hex())
 
 
 def fast_is_checksum_address(value: Union[AnyAddress, str, bytes]) -> bool:

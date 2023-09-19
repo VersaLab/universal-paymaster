@@ -1,9 +1,9 @@
-from .models import Operation
-from typing import Tuple
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from typing import Tuple
+from .models import Operation
 
 
 class BinarySearchAdmin(admin.ModelAdmin):

@@ -1,0 +1,54 @@
+[
+  {
+    "model": "paymaster.ApprovedTokens",
+    "fields": {
+      "name": "USDT",
+      "chains": {
+        "80001": {
+          "address": "0xE3065C1D829c9b307AcfE8ABDc2F3224Da5c8Ba0",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"MATICUSDT\"]",
+          "enabled": true
+        },
+        "534353": {
+          "address": "0xf2719572e4E9369cDC061Ef602D0F20f8a42234d",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDT\"]",
+          "enabled": true
+        },
+        "534351": {
+          "address": "0xFfd2eCE82f7959ae184D10fe17865d27B4f0FB94",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDT\"]",
+          "enabled": true
+        }
+      }
+    }
+  },
+  {
+    "model": "paymaster.ApprovedTokens",
+    "fields": {
+      "name": "USDC",
+      "chains": {
+        "80001": {
+          "address": "0x0DDeE4Ce1B2c5d17c83f9aEfA845DC3611F95F76",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"MATICUSDT\"]",
+          "enabled": true
+        },
+        "534353": {
+          "address": "0x67aE69Fd63b4fc8809ADc224A9b82Be976039509",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDC\"]",
+          "enabled": true
+        },
+        "534351": {
+          "address": "0x02a3e7E0480B668bD46b42852C58363F93e3bA5C",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDC\"]",
+          "enabled": true
+        }
+      }
+    }
+  }
+]

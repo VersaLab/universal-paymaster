@@ -1,25 +1,23 @@
 from django.db import models
-from django.core.validators import MinValueValidator, int_list_validator
+from django.core.validators import MinValueValidator
 from django.core import exceptions
 from django.utils.translation import gettext_lazy as _
 from hexbytes import HexBytes
 from .utils import validate_checksumed_address, fast_to_checksum_address
+
 try:
     from django.db import DefaultConnectionProxy
-
     connection = DefaultConnectionProxy()
 except ImportError:
     from django.db import connections
-
     connection = connections["default"]
 
-NULL_ADDRESS: str = "0x" + "0" * 40
+NULL_ADDRESS: str = "0x0000000000000000000000000000000000000000"
 
 
 class HexField(models.CharField):
     """
     Field to store hex values (without 0x). Returns hex with 0x prefix.
-
     On Database side a CharField is used.
     """
 
@@ -134,10 +132,10 @@ class Operation(models.Model):
     maxFeePerGas = Uint256Field(default=0, validators=[MinValueValidator(0)])
     maxPriorityFeePerGas = Uint256Field(default=0, validators=[MinValueValidator(0)])
     paymasterAndData = HexField(max_length=200000, null=True, blank=True)
-    signature = HexField(max_length=65, null=True, blank=True)
+    signature = HexField(max_length=200000, null=True, blank=True)
     status = models.CharField(max_length=200, null=True, blank=True)
 
 
-class ERC20ApprovedToken(models.Model):
-    name = models.CharField(max_length=200, default="ERC20", unique=True)
+class ApprovedTokens(models.Model):
+    name = models.CharField(max_length=100, default="ERC20", unique=True)
     chains = models.JSONField()
