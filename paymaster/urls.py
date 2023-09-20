@@ -5,6 +5,6 @@ from django.conf.urls.static import static
 from paymaster import paymaster
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("legacy_admin/", admin.site.urls),
     path("paymaster", paymaster.jsonrpc),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
