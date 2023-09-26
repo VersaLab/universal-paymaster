@@ -6,7 +6,7 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - 40003:8080
+      - 10102:8080
     volumes:
       - ./paymaster/configs/.env-scroll-sepolia:/app/paymaster/.env
     env_file:
