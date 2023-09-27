@@ -73,7 +73,7 @@ def pm_sponsorUserOperation(user_operation, token_address) -> Result:
     paymasterData = [
         token["address"],
         1,  # SponsorMode (GAS ONLY)
-        round(time.time()) + 900,  # validUntil 15 minutes in the future
+        round(time.time()) + 300,  # validUntil 5 minutes in the future
         0,  # Fee (in case mode == 0)
         token_rate,
         b'',
@@ -127,11 +127,11 @@ def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
     ierc20 = w3.eth.contract(address=token_address, abi=ierc20_abi)
     max_token_cost = _get_max_token_cost(op, token_rate)
 
-    balance = ierc20.functions.balanceOf(op["sender"]).call()
+    balance = int(ierc20.functions.balanceOf(op["sender"]).call())
     if (balance < max_token_cost):
-        return TempError(3, "Insufficient erc20 token to pay for gas", data=f"balance: {balance}, max_token_cost: {max_token_cost}")
+        return TempError(3, "Insufficient token balance", data=f"balance: {balance}, max_token_cost: {max_token_cost}")
 
-    allowance = ierc20.functions.allowance(op["sender"], paymaster_address).call()
+    allowance = int(ierc20.functions.allowance(op["sender"], paymaster_address).call())
     # if current allowance is not enough, we need to check the calldata to see if the operation
     # will give the paymaster enough allowance
     if (allowance < max_token_cost):
@@ -143,7 +143,7 @@ def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
         # function selector of batchSudoExecute
         expected_selector_2 = "0x7e5f1c3f"
         if (function_selector != expected_selector_1 and function_selector != expected_selector_2):
-            return TempError(4, "Invalid calldata", data="Invalid calldata")
+            return TempError(4, "Invalid function selector", data="Invalid function selector")
 
         try:
             decodedCalldata = versawallet.decode_function_input(calldata)
@@ -151,23 +151,25 @@ def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
             data = decodedCalldata[1]["data"]
             operation = decodedCalldata[1]["operation"]
             if len(to) < 2 or operation[1] != 0:
-                return TempError(4, "Invalid calldata", data="Invalid calldata")
+                return TempError(5, "Invalid calldata", data="Invalid calldata")
 
             # function selector of approve
             approve_selector = "0x095ea7b3"
             # the second operation must be a call to approve the paymaster
             approve_data = data[1]
             if approve_data.hex()[:8] != approve_selector[2:10]:
-                return TempError(4, "Invalid calldata", data="Invalid calldata")
+                return TempError(6, "Invalid function selector", data="Invalid function selector")
 
             decodedApproveData = ierc20.decode_function_input(approve_data)
             spender = decodedApproveData[1]["spender"]
-            amount = decodedApproveData[1]["amount"]
-            if (to[1] != token_address or spender != paymaster_address or amount < max_token_cost):
-                return TempError(4, "Invalid calldata", data="Invalid calldata")
+            amount = int(decodedApproveData[1]["amount"])
+            if (to[1] != token_address or spender != paymaster_address):
+                return TempError(7, "Invalid token or paymaster address", data="Invalid token or paymaster address")
+            if (amount < int(max_token_cost * 0.6)):
+                return TempError(8, "Insufficient approve amount", data="Insufficient approve amount")
         except Exception as e:
             logger.info(f"_check_balance_and_allowance exception: {e}")
-            return TempError(4, "Invalid calldata", data="Invalid calldata")
+            return TempError(9, "Unknown Error", data="Unknown Error")
     return Success()
 
 
