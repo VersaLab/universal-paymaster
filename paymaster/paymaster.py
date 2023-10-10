@@ -1,16 +1,16 @@
+import environ
+import json
+import logging
 import os
 import re
-import time
-import json
-import environ
-import logging
 import requests
-from django.views.decorators.csrf import csrf_exempt
+import time
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from eth_account.messages import defunct_hash_message
+from jsonrpcserver import method, dispatch, Result, Success, Error
 from web3 import Web3, HTTPProvider
 from web3.middleware import geth_poa_middleware
-from eth_account.messages import defunct_hash_message
-from jsonrpcserver import method, Result, Success, dispatch, Error
 from .models import ApprovedTokens
 from .serializers import OperationSerialzer
 
@@ -165,7 +165,7 @@ def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
             amount = int(decodedApproveData[1]["amount"])
             if (to[1] != token_address or spender != paymaster_address):
                 return TempError(7, "Invalid token or paymaster address", data="Invalid token or paymaster address")
-            if (amount < int(max_token_cost * 0.1)):
+            if (amount < int(max_token_cost * 0.6)):
                 return TempError(8, "Insufficient approve amount", data="Insufficient approve amount")
         except Exception as e:
             logger.info(f"_check_balance_and_allowance exception: {e}")
