@@ -2,13 +2,13 @@ version: "3.9"
 
 services:
   verifying-paymaster:
-    container_name: verifying-paymaster-polygon-mumbai
+    container_name: verifying-paymaster-scroll-mainnet-v1.2
     build: .
     restart: unless-stopped
     ports:
-      - 10104:8080
+      - 10202:8080
     volumes:
-      - ./paymaster/configs/.env-polygon-mumbai:/app/paymaster/.env
+      - ./paymaster/configs/.env-scroll-mainnet:/app/paymaster/.env
     env_file:
       - .env
     environment:

@@ -165,7 +165,8 @@ def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
             amount = int(decodedApproveData[1]["amount"])
             if (to[1] != token_address or spender != paymaster_address):
                 return TempError(7, "Invalid token or paymaster address", data="Invalid token or paymaster address")
-            if (amount < int(max_token_cost * 0.6)):
+            if (amount < int(max_token_cost * 0.9)):
+                logger.info(f"amount:{amount} max_token_cost:{max_token_cost}")
                 return TempError(8, "Insufficient approve amount", data="Insufficient approve amount")
         except Exception as e:
             logger.info(f"_check_balance_and_allowance exception: {e}")
