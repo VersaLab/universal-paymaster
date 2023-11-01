@@ -64,6 +64,10 @@ def pm_sponsorUserOperation(user_operation, token_address) -> Result:
     op["maxFeePerGas"] = int(op["maxFeePerGas"], 16)
     op["maxPriorityFeePerGas"] = int(op["maxPriorityFeePerGas"], 16)
 
+    res = _check_gaslimit(op)
+    if isinstance(res, TempError):
+        return Error(res.code, res.message, data=res.data)
+
     token_rate = _get_token_rate(token)
 
     res = _check_balance_and_allowance(op, token_address, token_rate)
@@ -76,7 +80,7 @@ def pm_sponsorUserOperation(user_operation, token_address) -> Result:
         round(time.time()) + 300,  # validUntil 5 minutes in the future
         0,  # Fee (in case mode == 0)
         token_rate,
-        b'',
+        b''
     ]
     paymasterData[5] = paymaster_verifier.signHash(defunct_hash_message(paymaster.functions.getHash(op, paymasterData).call())).signature.hex()
     paymasterAndData = f"{paymaster_address}{paymasterData[0][2:]}{paymasterData[1]:0>2x}{paymasterData[2]:0>12x}{paymasterData[3]:0>64x}{paymasterData[4]:0>64x}{paymasterData[5][2:]}".lower()
@@ -121,6 +125,25 @@ def _get_max_token_cost(op, token_rate) -> int:
         gas_price = min(op["maxFeePerGas"], op["maxPriorityFeePerGas"] + w3.eth.get_block("latest").baseFeePerGas)
     actual_token_cost = int((max_gas_cost + 35000) * gas_price * token_rate / 1e18)
     return actual_token_cost
+
+
+def _check_gaslimit(op) -> Result:
+    data = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "eth_estimateUserOperationGas",
+        "params": [
+            op,
+            entrypoint_address
+        ]
+    }
+    with requests.post(env('BUNDLER_URL'), json=data) as response:
+        result = response.json()
+        callGasLimit = result["result"]["callGasLimit"]
+        verificationGasLimit = result["result"]["verificationGas"]
+        preVerificationGas = result["result"]["preVerificationGas"]
+        if op["callGasLimit"] < int(callGasLimit * 0.9) or op["verificationGasLimit"] < int(verificationGasLimit * 0.9) or op["preVerificationGas"] < int(preVerificationGas * 0.9):
+            return TempError(10, "gaslimit too low", data=f"gaslimit too low")
 
 
 def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
