@@ -57,16 +57,15 @@ def pm_sponsorUserOperation(user_operation, token_address) -> Result:
         return Error(400, "BAD REQUEST", data="BAD REQUEST")
 
     op = dict(serialzer.data)
+    res = _check_gaslimit(op)
+    if isinstance(res, TempError):
+        return Error(res.code, res.message, data=res.data)
     op["nonce"] = int(op["nonce"], 16)
     op["callGasLimit"] = int(op["callGasLimit"], 16)
     op["verificationGasLimit"] = int(op["verificationGasLimit"], 16)
     op["preVerificationGas"] = int(op["preVerificationGas"], 16)
     op["maxFeePerGas"] = int(op["maxFeePerGas"], 16)
     op["maxPriorityFeePerGas"] = int(op["maxPriorityFeePerGas"], 16)
-
-    res = _check_gaslimit(op)
-    if isinstance(res, TempError):
-        return Error(res.code, res.message, data=res.data)
 
     token_rate = _get_token_rate(token)
 
@@ -142,7 +141,7 @@ def _check_gaslimit(op) -> Result:
         callGasLimit = result["result"]["callGasLimit"]
         verificationGasLimit = result["result"]["verificationGas"]
         preVerificationGas = result["result"]["preVerificationGas"]
-        if op["callGasLimit"] < int(callGasLimit * 0.9) or op["verificationGasLimit"] < int(verificationGasLimit * 0.9) or op["preVerificationGas"] < int(preVerificationGas * 0.9):
+        if int(op["callGasLimit"], 16) < int(callGasLimit * 0.9) or int(op["verificationGasLimit"], 16) < int(verificationGasLimit * 0.9) or int(op["preVerificationGas"], 16) < int(preVerificationGas * 0.9):
             return TempError(10, "gaslimit too low", data=f"gaslimit too low")
 
 
@@ -189,7 +188,6 @@ def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
             if (to[1] != token_address or spender != paymaster_address):
                 return TempError(7, "Invalid token or paymaster address", data="Invalid token or paymaster address")
             if (amount < int(max_token_cost * 0.9)):
-                logger.info(f"amount:{amount} max_token_cost:{max_token_cost}")
                 return TempError(8, "Insufficient approve amount", data="Insufficient approve amount")
         except Exception as e:
             logger.info(f"_check_balance_and_allowance exception: {e}")
