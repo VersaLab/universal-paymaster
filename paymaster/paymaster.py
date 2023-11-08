@@ -57,9 +57,9 @@ def pm_sponsorUserOperation(user_operation, token_address) -> Result:
         return Error(400, "BAD REQUEST", data="BAD REQUEST")
 
     op = dict(serialzer.data)
-    res = _check_gaslimit(op)
-    if isinstance(res, TempError):
-        return Error(res.code, res.message, data=res.data)
+    # res = _check_gaslimit(op)
+    # if isinstance(res, TempError):
+    #     return Error(res.code, res.message, data=res.data)
     op["nonce"] = int(op["nonce"], 16)
     op["callGasLimit"] = int(op["callGasLimit"], 16)
     op["verificationGasLimit"] = int(op["verificationGasLimit"], 16)
@@ -69,9 +69,9 @@ def pm_sponsorUserOperation(user_operation, token_address) -> Result:
 
     token_rate = _get_token_rate(token)
 
-    res = _check_balance_and_allowance(op, token_address, token_rate)
-    if isinstance(res, TempError):
-        return Error(res.code, res.message, data=res.data)
+    # res = _check_balance_and_allowance(op, token_address, token_rate)
+    # if isinstance(res, TempError):
+    #     return Error(res.code, res.message, data=res.data)
 
     paymasterData = [
         token["address"],
@@ -116,6 +116,7 @@ def _get_token_rate(token):
     return rate
 
 
+'''
 def _get_max_token_cost(op, token_rate) -> int:
     max_gas_cost = op["callGasLimit"] + op["verificationGasLimit"] * 3 + op["preVerificationGas"]
     if (op["maxFeePerGas"] == op["maxPriorityFeePerGas"]):
@@ -193,6 +194,7 @@ def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
             logger.info(f"_check_balance_and_allowance exception: {e}")
             return TempError(9, "Unknown Error", data="Unknown Error")
     return Success()
+'''
 
 
 @csrf_exempt
