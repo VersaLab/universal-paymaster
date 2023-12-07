@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import os
 import argparse
+import os
 
 
 def main():

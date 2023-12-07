@@ -2,13 +2,13 @@ version: "3.9"
 
 services:
   verifying-paymaster:
-    container_name: verifying-paymaster-scroll-sepolia-v1.2
+    container_name: verifying-paymaster-arbitrum-goerli-v1.2
     build: .
     restart: unless-stopped
     ports:
-      - 10200:8080
+      - 10204:8080
     volumes:
-      - ./paymaster/configs/.env-scroll-sepolia:/app/paymaster/.env
+      - ./paymaster/configs/.env-arbitrum-goerli:/app/paymaster/.env
     env_file:
       - .env
     environment:

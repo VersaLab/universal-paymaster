@@ -4,12 +4,6 @@
     "fields": {
       "name": "USDT",
       "chains": {
-        "534352": {
-          "address": "0xf55BEC9cafDbE8730f096Aa55dad6D22d44099Df",
-          "decimals": 6,
-          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDT\"]",
-          "enabled": true
-        },
         "534351": {
           "address": "0xFfd2eCE82f7959ae184D10fe17865d27B4f0FB94",
           "decimals": 6,
@@ -24,14 +18,32 @@
     "fields": {
       "name": "USDC",
       "chains": {
-        "534352": {
-          "address": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
+        "534351": {
+          "address": "0x02a3e7E0480B668bD46b42852C58363F93e3bA5C",
           "decimals": 6,
           "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDC\"]",
           "enabled": true
         },
-        "534351": {
-          "address": "0x02a3e7E0480B668bD46b42852C58363F93e3bA5C",
+        "80001": {
+          "address": "0x0FA8781a83E46826621b3BC094Ea2A0212e71B23",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"MATICUSDT\"]",
+          "enabled": true
+        },
+        "421613": {
+          "address": "0x8FB1E3fC51F3b789dED7557E680551d93Ea9d892",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDC\"]",
+          "enabled": true
+        },
+        "420": {
+          "address": "0x7E07E15D2a87A24492740D16f5bdF58c16db0c4E",
+          "decimals": 6,
+          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDC\"]",
+          "enabled": true
+        },
+        "84531": {
+          "address": "0xF175520C52418dfE19C8098071a252da48Cd1C19",
           "decimals": 6,
           "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDC\"]",
           "enabled": true
