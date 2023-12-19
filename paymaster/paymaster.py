@@ -36,57 +36,63 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "abis/IERC20A
     ierc20_abi = json.load(f)
 
 
-class TempError:
-    def __init__(self, code, message, data=None):
-        self.code = code
-        self.message = message
-        self.data = data
+# class TempError:
+#     def __init__(self, code, message, data=None):
+#         self.code = code
+#         self.message = message
+#         self.data = data
 
 
 @method
-def pm_sponsorUserOperation(user_operation, token_address) -> Result:
-    start_time = time.time()
-    token_object = approved_tokens.filter(chains__icontains=token_address)
-    if len(token_object) < 1:
-        return Error(2, "Unsupported token", data="Unsupported token")
-    token = token_object.first().chains[chainid]
-    if token["address"] != token_address or not token["enabled"]:
-        return Error(2, "Unsupported token", data="Unsupported token")
-    serialzer = OperationSerialzer(data=user_operation)
-    if not serialzer.is_valid():
-        return Error(400, "BAD REQUEST", data="BAD REQUEST")
+def pm_sponsorUserOperation(user_operation, additional_data) -> Result:
+    if len(additional_data) == 42:
+        token_address = Web3.to_checksum_address(additional_data)
+        start_time = time.time()
+        token_object = approved_tokens.filter(chains__icontains=token_address)
+        if len(token_object) < 1:
+            return Error(2, "unsupported token", data="unsupported token")
+        token = token_object.first().chains[chainid]
+        if token["address"] != token_address or not token["enabled"]:
+            return Error(2, "unsupported token", data="unsupported token")
+        serialzer = OperationSerialzer(data=user_operation)
+        if not serialzer.is_valid():
+            return Error(400, "BAD REQUEST", data="BAD REQUEST")
 
-    op = dict(serialzer.data)
-    # res = _check_gaslimit(op)
-    # if isinstance(res, TempError):
-    #     return Error(res.code, res.message, data=res.data)
-    op["nonce"] = int(op["nonce"], 16)
-    op["callGasLimit"] = int(op["callGasLimit"], 16)
-    op["verificationGasLimit"] = int(op["verificationGasLimit"], 16)
-    op["preVerificationGas"] = int(op["preVerificationGas"], 16)
-    op["maxFeePerGas"] = int(op["maxFeePerGas"], 16)
-    op["maxPriorityFeePerGas"] = int(op["maxPriorityFeePerGas"], 16)
+        op = dict(serialzer.data)
 
-    token_rate = _get_token_rate(token)
+        # res = _check_gaslimit(op)
+        # if isinstance(res, TempError):
+        #     return Error(res.code, res.message, data=res.data)
 
-    # res = _check_balance_and_allowance(op, token_address, token_rate)
-    # if isinstance(res, TempError):
-    #     return Error(res.code, res.message, data=res.data)
+        op["nonce"] = int(op["nonce"], 16)
+        op["callGasLimit"] = int(op["callGasLimit"], 16)
+        op["verificationGasLimit"] = int(op["verificationGasLimit"], 16)
+        op["preVerificationGas"] = int(op["preVerificationGas"], 16)
+        op["maxFeePerGas"] = int(op["maxFeePerGas"], 16)
+        op["maxPriorityFeePerGas"] = int(op["maxPriorityFeePerGas"], 16)
 
-    paymasterData = [
-        token["address"],
-        1,  # SponsorMode (GAS ONLY)
-        round(time.time()) + 300,  # validUntil 5 minutes in the future
-        0,  # Fee (in case mode == 0)
-        token_rate,
-        b''
-    ]
-    paymasterData[5] = paymaster_verifier.signHash(defunct_hash_message(paymaster.functions.getHash(op, paymasterData).call())).signature.hex()
-    paymasterAndData = f"{paymaster_address}{paymasterData[0][2:]}{paymasterData[1]:0>2x}{paymasterData[2]:0>12x}{paymasterData[3]:0>64x}{paymasterData[4]:0>64x}{paymasterData[5][2:]}".lower()
-    end_time = time.time()
-    duration = round((end_time - start_time), 3) * 1000
-    logger.info(f"pm_sponsorUserOperation {duration}ms user_operation:{user_operation} token_address:{token_address} paymasterAndData:{paymasterAndData}")
-    return Success(paymasterAndData)
+        token_rate = _get_token_rate(token)
+
+        # res = _check_balance_and_allowance(op, token_address, token_rate)
+        # if isinstance(res, TempError):
+        #     return Error(res.code, res.message, data=res.data)
+
+        payWithTokenModeData = [
+            round(time.time()) + 300,  # validUntil 5 minutes in the future
+            token["address"],
+            token_rate,
+            b''
+        ]
+        payWithTokenModeData[3] = paymaster_verifier.signHash(defunct_hash_message(paymaster.functions.getPayWithTokenModeHash(op, payWithTokenModeData).call())).signature.hex()
+        paymasterAndData = f"{paymaster_address}01{payWithTokenModeData[0]:0>12x}{payWithTokenModeData[1][2:]}{payWithTokenModeData[2]:0>64x}{payWithTokenModeData[3][2:]}".lower()
+        end_time = time.time()
+        duration = round((end_time - start_time), 3) * 1000
+        logger.info(f"pm_sponsorUserOperation {duration}ms sponsor_mode:PAY_WITH_TOKEN\nuser_operation:{user_operation}\ntoken_address:{token_address}\npaymasterAndData:{paymasterAndData}")
+        return Success(paymasterAndData)
+    elif len(additional_data) == 132:
+        pass
+    else:
+        return Error(1, "additional data length mismatch", data="additional data length mismatch")
 
 
 @method

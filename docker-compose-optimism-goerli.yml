@@ -1,8 +1,8 @@
 version: "3.9"
 
 services:
-  verifying-paymaster:
-    container_name: verifying-paymaster-optimism-goerli-v1.2
+  universal-paymaster:
+    container_name: universal-paymaster-optimism-goerli-v1.2
     build: .
     restart: unless-stopped
     ports:

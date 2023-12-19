@@ -21,6 +21,81 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "cost",
+        "type": "uint256"
+      }
+    ],
+    "name": "FreePrivilegeSponsored",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "sponsorInfoHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "MultiChainUniversalPrePaid",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "sponsorInfoHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "cost",
+        "type": "uint256"
+      }
+    ],
+    "name": "MultiChainUniversalSponsored",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "previousOwner",
         "type": "address"
       },
@@ -44,19 +119,13 @@
         "type": "address"
       },
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "indexed": false,
         "internalType": "uint256",
         "name": "cost",
         "type": "uint256"
       }
     ],
-    "name": "UserOperationSponsored",
+    "name": "PayWithTokenSponsored",
     "type": "event"
   },
   {
@@ -83,25 +152,6 @@
     "name": "addStake",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "contract IERC20Metadata",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "balances",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -204,24 +254,332 @@
       {
         "components": [
           {
-            "internalType": "contract IERC20Metadata",
-            "name": "token",
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct VersaUniversalPaymaster.FreePrivilegeModeData",
+        "name": "_freePrivilegeModeData",
+        "type": "tuple"
+      }
+    ],
+    "name": "getFreePrivilegeModeHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "sender",
             "type": "address"
           },
           {
-            "internalType": "enum VersaVerifyingPaymaster.SponsorMode",
-            "name": "mode",
-            "type": "uint8"
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
           },
+          {
+            "internalType": "bytes",
+            "name": "initCode",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "callData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "callGasLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "verificationGasLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "preVerificationGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxFeePerGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxPriorityFeePerGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "paymasterAndData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct UserOperation",
+        "name": "_userOp",
+        "type": "tuple"
+      },
+      {
+        "components": [
           {
             "internalType": "uint48",
             "name": "validUntil",
             "type": "uint48"
           },
           {
+            "internalType": "bytes32",
+            "name": "sponsorInfoHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct VersaUniversalPaymaster.MultiChainUniversalModeData",
+        "name": "_multiChainUniversalModeData",
+        "type": "tuple"
+      }
+    ],
+    "name": "getMultiChainUniversalModeHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "token",
+            "type": "address"
+          },
+          {
             "internalType": "uint256",
-            "name": "fee",
+            "name": "value",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "sponsorInfoHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct VersaUniversalPaymaster.MultiChainUniversalModePaymentData",
+        "name": "_multiChainUniversalModePaymentData",
+        "type": "tuple"
+      }
+    ],
+    "name": "getMultiChainUniversalModePaymentHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "sender",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "initCode",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "callData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "callGasLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "verificationGasLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "preVerificationGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxFeePerGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxPriorityFeePerGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "paymasterAndData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct UserOperation[]",
+        "name": "_userOps",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_chainIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "getMultiChainUniversalModeSponsorInfoHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "sender",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "initCode",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "callData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "callGasLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "verificationGasLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "preVerificationGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxFeePerGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxPriorityFeePerGas",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "paymasterAndData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct UserOperation",
+        "name": "_userOp",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "token",
+            "type": "address"
           },
           {
             "internalType": "uint256",
@@ -234,12 +592,12 @@
             "type": "bytes"
           }
         ],
-        "internalType": "struct VersaVerifyingPaymaster.PaymasterData",
-        "name": "_paymasterData",
+        "internalType": "struct VersaUniversalPaymaster.PayWithTokenModeData",
+        "name": "_payWithTokenModeData",
         "type": "tuple"
       }
     ],
-    "name": "getHash",
+    "name": "getPayWithTokenModeHash",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -271,29 +629,132 @@
         "type": "bytes"
       }
     ],
-    "name": "parsePaymasterAndData",
+    "name": "parseFreePrivilegeModeData",
     "outputs": [
       {
         "components": [
-          {
-            "internalType": "contract IERC20Metadata",
-            "name": "token",
-            "type": "address"
-          },
-          {
-            "internalType": "enum VersaVerifyingPaymaster.SponsorMode",
-            "name": "mode",
-            "type": "uint8"
-          },
           {
             "internalType": "uint48",
             "name": "validUntil",
             "type": "uint48"
           },
           {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct VersaUniversalPaymaster.FreePrivilegeModeData",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_paymasterAndData",
+        "type": "bytes"
+      }
+    ],
+    "name": "parseMultiChainUniversalModeData",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "sponsorInfoHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct VersaUniversalPaymaster.MultiChainUniversalModeData",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_paymentData",
+        "type": "bytes"
+      }
+    ],
+    "name": "parseMultiChainUniversalModePaymentData",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "token",
+            "type": "address"
+          },
+          {
             "internalType": "uint256",
-            "name": "fee",
+            "name": "value",
             "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "sponsorInfoHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct VersaUniversalPaymaster.MultiChainUniversalModePaymentData",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_paymasterAndData",
+        "type": "bytes"
+      }
+    ],
+    "name": "parsePayWithTokenModeData",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "token",
+            "type": "address"
           },
           {
             "internalType": "uint256",
@@ -306,7 +767,7 @@
             "type": "bytes"
           }
         ],
-        "internalType": "struct VersaVerifyingPaymaster.PaymasterData",
+        "internalType": "struct VersaUniversalPaymaster.PayWithTokenModeData",
         "name": "",
         "type": "tuple"
       }
@@ -338,6 +799,19 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_paymentData",
+        "type": "bytes"
+      }
+    ],
+    "name": "prePayForMultiChainUniversalModeSponsor",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
@@ -355,6 +829,30 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "universalSponsorStatusData",
+    "outputs": [
+      {
+        "internalType": "enum VersaUniversalPaymaster.UniversalSponsorStatus",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint48",
+        "name": "updateAt",
+        "type": "uint48"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -489,7 +987,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract IERC20Metadata",
+        "internalType": "contract IERC20",
         "name": "_token",
         "type": "address"
       },
@@ -508,5 +1006,9 @@
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
 ]
