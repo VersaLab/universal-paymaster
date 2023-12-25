@@ -1,3 +1,4 @@
+import base64
 import environ
 import json
 import logging
@@ -7,7 +8,8 @@ import requests
 import time
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from eth_account.messages import defunct_hash_message
+from eth_account import Account
+from eth_account.messages import defunct_hash_message, encode_defunct
 from jsonrpcserver import method, dispatch, Result, Success, Error
 from web3 import Web3, HTTPProvider
 from web3.middleware import geth_poa_middleware
@@ -23,6 +25,8 @@ chainid = str(w3.eth.chain_id)
 approved_tokens = ApprovedTokens.objects.filter(chains__has_key=chainid)
 pattern = re.compile(f'\"price\":\"(\d+\.\d+)\"')
 
+free_privilege_flag = "0x0000000000000000000000000000000000000001"
+free_privilege_signer_address = env('FREE_PRIVILEGE_SIGNER_ADDRESS')
 entrypoint_address = env('ENTRYPOINT_CONTRACT_ADDRESS')
 paymaster_address = env('PAYMASTER_CONTRACT_ADDRESS')
 paymaster_verifier = w3.eth.account.from_key(env('PAYMASTER_VERIFYER_PRIVATE_KEY'))
@@ -44,9 +48,11 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "abis/IERC20A
 
 
 @method
-def pm_sponsorUserOperation(user_operation, additional_data) -> Result:
-    if len(additional_data) == 42:
-        token_address = Web3.to_checksum_address(additional_data)
+def pm_sponsorUserOperation(context, user_operation, additional_data) -> Result:
+    if len(additional_data) != 42:
+        return Error(1, "additional data length mismatch", data="additional data length mismatch")
+    token_address = Web3.to_checksum_address(additional_data)
+    if token_address != free_privilege_flag:
         start_time = time.time()
         token_object = approved_tokens.filter(chains__icontains=token_address)
         if len(token_object) < 1:
@@ -89,14 +95,42 @@ def pm_sponsorUserOperation(user_operation, additional_data) -> Result:
         duration = round((end_time - start_time), 3) * 1000
         logger.info(f"pm_sponsorUserOperation {duration}ms sponsor_mode:PAY_WITH_TOKEN\nuser_operation:{user_operation}\ntoken_address:{token_address}\npaymasterAndData:{paymasterAndData}")
         return Success(paymasterAndData)
-    elif len(additional_data) == 132:
-        pass
     else:
-        return Error(1, "additional data length mismatch", data="additional data length mismatch")
+        start_time = time.time()
+        free_privilege_signature = context.META.get('HTTP_AUTHORIZATION_VERSA_BACKEND', None)
+        if not free_privilege_signature:
+            return Error(3, "authorization header is missing", data="authorization header is missing")
+        json_str = json.dumps(json.loads(context.body.decode()), separators=(',', ':'))
+        message = base64.b64encode(json_str.encode()).decode()
+        if _validate_free_privilege_signature(message, free_privilege_signature):
+            serialzer = OperationSerialzer(data=user_operation)
+            if not serialzer.is_valid():
+                return Error(400, "BAD REQUEST", data="BAD REQUEST")
+
+            op = dict(serialzer.data)
+            op["nonce"] = int(op["nonce"], 16)
+            op["callGasLimit"] = int(op["callGasLimit"], 16)
+            op["verificationGasLimit"] = int(op["verificationGasLimit"], 16)
+            op["preVerificationGas"] = int(op["preVerificationGas"], 16)
+            op["maxFeePerGas"] = int(op["maxFeePerGas"], 16)
+            op["maxPriorityFeePerGas"] = int(op["maxPriorityFeePerGas"], 16)
+
+            freePrivilegeModeData = [
+                round(time.time()) + 300,  # validUntil 5 minutes in the future
+                b''
+            ]
+            freePrivilegeModeData[1] = paymaster_verifier.signHash(defunct_hash_message(paymaster.functions.getFreePrivilegeModeHash(op, freePrivilegeModeData).call())).signature.hex()
+            paymasterAndData = f"{paymaster_address}00{freePrivilegeModeData[0]:0>12x}{freePrivilegeModeData[1][2:]}".lower()
+            end_time = time.time()
+            duration = round((end_time - start_time), 3) * 1000
+            logger.info(f"pm_sponsorUserOperation {duration}ms sponsor_mode:FREE_PRIVILEGE\nuser_operation:{user_operation}\ntoken_address:{token_address}\npaymasterAndData:{paymasterAndData}")
+            return Success(paymasterAndData)
+        else:
+            return Error(4, "validate signature failed", data="validate signature failed")
 
 
 @method
-def pm_getApprovedTokens() -> Result:
+def pm_getApprovedTokens(context) -> Result:
     start_time = time.time()
     result = []
     for approved_token in approved_tokens:
@@ -122,89 +156,21 @@ def _get_token_rate(token):
     return rate
 
 
-'''
-def _get_max_token_cost(op, token_rate) -> int:
-    max_gas_cost = op["callGasLimit"] + op["verificationGasLimit"] * 3 + op["preVerificationGas"]
-    if (op["maxFeePerGas"] == op["maxPriorityFeePerGas"]):
-        gas_price = op["maxFeePerGas"]
-    else:
-        gas_price = min(op["maxFeePerGas"], op["maxPriorityFeePerGas"] + w3.eth.get_block("latest").baseFeePerGas)
-    actual_token_cost = int((max_gas_cost + 35000) * gas_price * token_rate / 1e18)
-    return actual_token_cost
-
-
-def _check_gaslimit(op) -> Result:
-    data = {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "eth_estimateUserOperationGas",
-        "params": [
-            op,
-            entrypoint_address
-        ]
-    }
-    with requests.post(env('BUNDLER_URL'), json=data) as response:
-        result = response.json()
-        callGasLimit = result["result"]["callGasLimit"]
-        verificationGasLimit = result["result"]["verificationGas"]
-        preVerificationGas = result["result"]["preVerificationGas"]
-        if int(op["callGasLimit"], 16) < int(callGasLimit * 0.9) or int(op["verificationGasLimit"], 16) < int(verificationGasLimit * 0.9) or int(op["preVerificationGas"], 16) < int(preVerificationGas * 0.9):
-            return TempError(10, "gaslimit too low", data=f"gaslimit too low")
-
-
-def _check_balance_and_allowance(op, token_address, token_rate) -> Result:
-    ierc20 = w3.eth.contract(address=token_address, abi=ierc20_abi)
-    max_token_cost = _get_max_token_cost(op, token_rate)
-
-    balance = int(ierc20.functions.balanceOf(op["sender"]).call())
-    if (balance < max_token_cost):
-        return TempError(3, "Insufficient token balance", data=f"balance: {balance}, max_token_cost: {max_token_cost}")
-
-    allowance = int(ierc20.functions.allowance(op["sender"], paymaster_address).call())
-    # if current allowance is not enough, we need to check the calldata to see if the operation
-    # will give the paymaster enough allowance
-    if (allowance < max_token_cost):
-        # require the second operation of the userOp to be a call to approve the paymaster
-        calldata = op["callData"]
-        function_selector = calldata[:10]
-        # function selector of batchNormalExecute
-        expected_selector_1 = "0x520237d1"
-        # function selector of batchSudoExecute
-        expected_selector_2 = "0x7e5f1c3f"
-        if (function_selector != expected_selector_1 and function_selector != expected_selector_2):
-            return TempError(4, "Invalid function selector", data="Invalid function selector")
-
-        try:
-            decodedCalldata = versawallet.decode_function_input(calldata)
-            to = decodedCalldata[1]["to"]
-            data = decodedCalldata[1]["data"]
-            operation = decodedCalldata[1]["operation"]
-            if len(to) < 2 or operation[1] != 0:
-                return TempError(5, "Invalid calldata", data="Invalid calldata")
-
-            # function selector of approve
-            approve_selector = "0x095ea7b3"
-            # the second operation must be a call to approve the paymaster
-            approve_data = data[1]
-            if approve_data.hex()[:8] != approve_selector[2:10]:
-                return TempError(6, "Invalid function selector", data="Invalid function selector")
-
-            decodedApproveData = ierc20.decode_function_input(approve_data)
-            spender = decodedApproveData[1]["spender"]
-            amount = int(decodedApproveData[1]["amount"])
-            if (to[1] != token_address or spender != paymaster_address):
-                return TempError(7, "Invalid token or paymaster address", data="Invalid token or paymaster address")
-            if (amount < int(max_token_cost * 0.9)):
-                return TempError(8, "Insufficient approve amount", data="Insufficient approve amount")
-        except Exception as e:
-            logger.info(f"_check_balance_and_allowance exception: {e}")
-            return TempError(9, "Unknown Error", data="Unknown Error")
-    return Success()
-'''
+def _validate_free_privilege_signature(message, signature):
+    try:
+        recovered_address = Account.recover_message(encode_defunct(text=message), signature=signature)
+        logger.info(recovered_address)
+        if Web3.to_checksum_address(recovered_address) == Web3.to_checksum_address(free_privilege_signer_address):
+            return True
+        else:
+            return False
+    except Exception as e:
+        logger.error(f"_validate_free_privilege_signature exception:{e}")
+        return False
 
 
 @csrf_exempt
 def jsonrpc(request):
     return HttpResponse(
-        dispatch(request.body.decode()), content_type="application/json"
+        dispatch(request.body.decode(), context=request), content_type="application/json"
     )
