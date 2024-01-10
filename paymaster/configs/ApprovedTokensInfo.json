@@ -2,20 +2,6 @@
   {
     "model": "paymaster.ApprovedTokens",
     "fields": {
-      "name": "USDT",
-      "chains": {
-        "534351": {
-          "address": "0xFfd2eCE82f7959ae184D10fe17865d27B4f0FB94",
-          "decimals": 6,
-          "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDT\"]",
-          "enabled": true
-        }
-      }
-    }
-  },
-  {
-    "model": "paymaster.ApprovedTokens",
-    "fields": {
       "name": "USDC",
       "chains": {
         "534351": {
