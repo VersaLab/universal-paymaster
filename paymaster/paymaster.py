@@ -30,6 +30,8 @@ free_privilege_signer_address = env('FREE_PRIVILEGE_SIGNER_ADDRESS')
 entrypoint_address = env('ENTRYPOINT_CONTRACT_ADDRESS')
 paymaster_address = env('PAYMASTER_CONTRACT_ADDRESS')
 paymaster_verifier = w3.eth.account.from_key(env('PAYMASTER_VERIFYER_PRIVATE_KEY'))
+paymaster_fee_percentage = int(env('PAYMASTER_FEE_PERCENTAGE'))
+
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "abis/PaymasterABI.json")) as f:
     paymaster_abi = json.load(f)
     paymaster = w3.eth.contract(address=paymaster_address, abi=paymaster_abi)
@@ -38,13 +40,6 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "abis/VersaWa
     versawallet = w3.eth.contract(abi=versawallet_abi)
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "abis/IERC20ABI.json")) as f:
     ierc20_abi = json.load(f)
-
-
-# class TempError:
-#     def __init__(self, code, message, data=None):
-#         self.code = code
-#         self.message = message
-#         self.data = data
 
 
 @method
@@ -66,10 +61,6 @@ def pm_sponsorUserOperation(context, user_operation, additional_data) -> Result:
 
         op = dict(serialzer.data)
 
-        # res = _check_gaslimit(op)
-        # if isinstance(res, TempError):
-        #     return Error(res.code, res.message, data=res.data)
-
         op["nonce"] = int(op["nonce"], 16)
         op["callGasLimit"] = int(op["callGasLimit"], 16)
         op["verificationGasLimit"] = int(op["verificationGasLimit"], 16)
@@ -78,10 +69,6 @@ def pm_sponsorUserOperation(context, user_operation, additional_data) -> Result:
         op["maxPriorityFeePerGas"] = int(op["maxPriorityFeePerGas"], 16)
 
         token_rate = _get_token_rate(token)
-
-        # res = _check_balance_and_allowance(op, token_address, token_rate)
-        # if isinstance(res, TempError):
-        #     return Error(res.code, res.message, data=res.data)
 
         payWithTokenModeData = [
             round(time.time()) + 300,  # validUntil 5 minutes in the future
@@ -152,7 +139,7 @@ def pm_getApprovedTokens(context) -> Result:
 
 def _get_token_rate(token):
     data = requests.get(token["exchangeRateSource"]).content.decode()
-    rate = round(float(pattern.search(data).group(1)) * (10 ** token["decimals"]))
+    rate = round(float(pattern.search(data).group(1)) * float(1 + paymaster_fee_percentage/100) * (10 ** token["decimals"]))
     return rate
 
 
