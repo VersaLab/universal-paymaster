@@ -138,5 +138,6 @@ GitHub.sublime-settings
 .history
 
 .env-*
+docker-compose-*.yml
 deploy/
 test/
