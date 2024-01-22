@@ -79,7 +79,7 @@
           "enabled": true
         },
         "1442": {
-          "address": "",
+          "address": "0xA40b0dA87577Cd224962e8A3420631E1C4bD9A9f",
           "decimals": 6,
           "exchangeRateSource": "https://api.binance.com/api/v3/ticker/price?symbols=[\"ETHUSDC\"]",
           "enabled": true
